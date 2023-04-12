@@ -17,6 +17,18 @@ gh = Github(os.environ.get("GITHUB_TOKEN"))
 webhook_secret = os.environ.get("WEBHOOK_SECRET")
 
 
+def preprocess_changes(changes_str):
+    lines = changes_str.split('\n')
+    processed_lines = []
+    for line in lines:
+        if line.startswith('+'):
+            processed_lines.append(f'(+) {line[1:]}')
+        elif line.startswith('-'):
+            processed_lines.append(f'(-) {line[1:]}')
+        else:
+            processed_lines.append(line)
+    return '\n'.join(processed_lines)
+
 def validate_signature(request):
     signature = request.headers.get('X-Hub-Signature-256')
     if signature is None:

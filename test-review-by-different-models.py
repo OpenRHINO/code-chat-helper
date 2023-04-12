@@ -20,14 +20,30 @@ def preprocess_changes(changes_str):
 
 
 # Set up OpenAI API client
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+OPENAI_API_KEY = "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"
+# openai.api_key = os.environ.get("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
+
 # Set up GitHub API client
-gh = Github(os.environ.get("GITHUB_TOKEN"))
+# gh = Github(os.environ.get("GITHUB_TOKEN"))
+gh = Github("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")
 
 # Get the code changes from the PR
 gh_repo = gh.get_repo("OpenRHINO/RHINO-CLI")
 gh_pr = gh_repo.get_pull(58)
 code_changes = gh_pr.get_files()
+
+
+"""
+TODO:
+
+1. GitHub PR api
+2. GPT-3.5-turbo or text-davinci-003?
+3. How to use GPT-3.5-turbo? what is the parameters? What is a better prompt?
+4. How to use text-davinci-003? what is the parameters? What is a better prompt?
+5. + and - in the code changes, does gpt knows it?
+6. online code, compare the difference between this file and pr-review.py
+"""
 
 # Concatenate the changes into a single string
 changes_str = "Title: " + gh_pr.title + "\n"
