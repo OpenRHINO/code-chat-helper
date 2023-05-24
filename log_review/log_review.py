@@ -63,7 +63,7 @@ def get_gpt_log_review(log, num_chunks, model="gpt-3.5-turbo", max_tokens=300, t
         messages = [
             {
                 "role": "system",
-                "content": "You are a sophisticated AI model with programming expertise. Analyze the following system logs, if there are errors, please indicate when it happens. Provide a summary info in one line."
+                "content": "You are a sophisticated AI model with programming expertise. Analyze the following system logs, if there are errors, please indicate when it happens. Provide a summary info less than 50 words."
             },
             {
                 "role": "user",
@@ -83,7 +83,7 @@ def get_gpt_log_review(log, num_chunks, model="gpt-3.5-turbo", max_tokens=300, t
         summary_messages = [
             {
                 "role": "system",
-                "content": "Here are some chunks of summary info for the logs. Please review and provide a summary for the whole log in one line."
+                "content": "Here are some chunks of summary info for the logs. Please review and provide a summary for the whole log less than 50 words."
             },
             {
                 "role": "user",
