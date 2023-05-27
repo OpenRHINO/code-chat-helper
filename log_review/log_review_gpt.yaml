@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: CronJob
+metadata:
+  name: log-review-gpt
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: log-review-gpt
+            image: jediyoda36/log-review-gpt
+            env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: openai-secret
+                  key: api-key
+          restartPolicy: OnFailure
