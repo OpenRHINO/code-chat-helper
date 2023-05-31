@@ -44,6 +44,10 @@ class KubernetesLogAnalyzer:
         self.since_seconds = since_seconds
         config.load_kube_config()
         self.v1 = client.CoreV1Api()
+
+        assert (
+            "OPENAI_API_KEY" in os.environ
+        ), "OPENAI_API_KEY not found in environment variables"
         openai.api_key = os.environ["OPENAI_API_KEY"]
 
     # The setup_logging method sets up the configuration for the logger.
@@ -64,7 +68,7 @@ class KubernetesLogAnalyzer:
             return pods
         except Exception as e:
             self.logger.error(f"Failed to get pod names: {e}")
-            return []
+            raise
 
     # The get_log method retrieves the log of a specified pod.
     def get_log(self, pod_name, namespace, container_name):
@@ -103,8 +107,22 @@ class KubernetesLogAnalyzer:
                 filtered_logs.append(log)
         return error_count, filtered_logs
 
-    # The get_gpt_log_review method uses the GPT model from OpenAI to analyze the logs and returns an analysis report.
-    def get_gpt_log_review(self, log):
+    def get_openai_completion(self, messages):
+        try:
+            completion = openai.ChatCompletion.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+                n=self.n,
+            )
+            return completion
+        except openai.error.OpenAIError as e:
+            self.logger.error(f"Failed to get openai completion: {e}")
+            raise
+
+    # The get_pr_log_review method uses the GPT model from OpenAI to analyze the logs and returns an analysis report.
+    def get_log_review(self, log):
         report_parts = []
         for i in range(0, len(log), self.chunk_size):
             chunk = log[i : i + self.chunk_size]
@@ -129,19 +147,13 @@ class KubernetesLogAnalyzer:
                 if i % 2 == 0:
                     time.sleep(40)
             try:
-                completion = openai.ChatCompletion.create(
-                    model=self.model,
-                    messages=messages,
-                    max_tokens=self.max_tokens,
-                    temperature=self.temperature,
-                    n=self.n,
-                )
+                completion = self.get_openai_completion(messages)
                 report_parts.append(
                     completion["choices"][0]["message"]["content"].strip()
                 )
             except openai.error.OpenAIError as e:
                 self.logger.error(f"Failed to get chunked log review: {e}")
-                return None
+                raise
 
         summary_messages = [
             {
@@ -151,13 +163,7 @@ class KubernetesLogAnalyzer:
             {"role": "user", "content": "\n".join(report_parts)},
         ]
         try:
-            summary_completion = openai.ChatCompletion.create(
-                model=self.model,
-                messages=summary_messages,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                n=self.n,
-            )
+            summary_completion = self.get_openai_completion(summary_messages)
             # output summary log review
             final_report = summary_completion["choices"][0]["message"][
                 "content"
@@ -168,7 +174,7 @@ class KubernetesLogAnalyzer:
         return final_report
 
     # The analyze method is responsible for collecting, filtering, analyzing logs, and logging the results.
-    def analyze(self):
+    def analyze_pr_review_logs(self):
         log = ""
 
         # get all namespaces in the cluster if namespaces is not specified
@@ -193,7 +199,7 @@ class KubernetesLogAnalyzer:
         log = self.filter_flask_logs(log)
         error_count, log = self.filter_http_error_logs(log)
 
-        report = self.get_gpt_log_review(log)
+        report = self.get_log_review(log)
 
         self.logger.info(
             f"{error_count} lines of log with http bad request were removed, k8s log review: {report}."
@@ -215,7 +221,7 @@ def main():
         chunk_size=100,
     )
 
-    analyzer.analyze()
+    analyzer.analyze_pr_review_logs()
 
 
 if __name__ == "__main__":
