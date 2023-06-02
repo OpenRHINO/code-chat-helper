@@ -3,14 +3,14 @@ kind: CronJob
 metadata:
   name: log-review-cronjob
 spec:
-  schedule: "*/10 * * * *"
+  schedule: "0 0 * * *" # start at 00:00 every day
   jobTemplate:
     spec:
       template:
         spec:
           containers:
           - name: log-review-gpt
-            image: jediyoda36/log_review:latest
+            image: openrhino/log-review-gpt:latest
             env:
               - name: OPENAI_API_KEY
                 valueFrom:
