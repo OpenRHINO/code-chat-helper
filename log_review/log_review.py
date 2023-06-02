@@ -30,7 +30,8 @@ class KubernetesLogAnalyzer:
         temperature=0.8,
         n=1,
         max_tokens_per_chunk=4096,
-        since_seconds=3600 * 12,
+        since_seconds=3600 * 24,
+        is_in_cluster=True,
     ):
         self.namespaces = namespaces
         self.error_strings = error_strings
@@ -42,7 +43,13 @@ class KubernetesLogAnalyzer:
         self.max_tokens_per_chunk = max_tokens_per_chunk
         self.logger = self.setup_logging()
         self.since_seconds = since_seconds
-        config.load_kube_config()
+        self.is_in_cluster = is_in_cluster
+
+        if self.is_in_cluster:
+            config.load_incluster_config() # load kube config from service account
+        else:
+            config.load_kube_config() # load kube config from ~/.kube/config
+
         self.v1 = client.CoreV1Api()
 
         assert (
@@ -106,7 +113,7 @@ class KubernetesLogAnalyzer:
             else:
                 filtered_logs.append(log)
         return error_count, filtered_logs
-
+    # The get_openai_completion method uses the GPT model from OpenAI to analyze the logs and returns an analysis report.
     def get_openai_completion(self, messages):
         try:
             completion = openai.ChatCompletion.create(
