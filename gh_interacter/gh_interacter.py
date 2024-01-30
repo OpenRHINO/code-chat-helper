@@ -161,7 +161,7 @@ def get_repo_structure():
         else:
             return jsonify({'code': 404, 'message': 'No main or master branch found'}), 404
         
-    if not repo_full_name or '/' not in repo_full_name:
+    if not repo_full_name or '/' not in repo_full_name or len(repo_full_name.split('/')) != 2:
         return jsonify({'code': 400, 'message': 'Invalid or missing repo_full_name'}), 400
 
     # 获取最新提交的 SHA
@@ -194,4 +194,4 @@ def get_repo_structure():
     return jsonify(repo_structure)
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5050)
+    app.run(host="0.0.0.0", port=5000)
