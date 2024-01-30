@@ -146,5 +146,52 @@ def submit_pr_comment():
 
     return jsonify({'message': 'Comment created successfully'}), 201
 
+@app.route('/repo_structure', methods=['GET'])
+@require_api_key
+def get_repo_structure():
+    repo_full_name = request.args.get('repo_full_name')
+    branch_name = request.args.get('branch_name') 
+
+    if not branch_name:
+        # 检查是否存在 main 或 master 分支
+        if check_branch_exists(repo_full_name, "main"):
+            branch_name = "main"
+        elif check_branch_exists(repo_full_name, "master"):
+            branch_name = "master"
+        else:
+            return jsonify({'code': 404, 'message': 'No main or master branch found'}), 404
+        
+    if not repo_full_name or '/' not in repo_full_name:
+        return jsonify({'code': 400, 'message': 'Invalid or missing repo_full_name'}), 400
+
+    # 获取最新提交的 SHA
+    commits_url = f"https://api.github.com/repos/{repo_full_name}/commits/{branch_name}"
+    commits_response = requests.get(commits_url)
+
+    if commits_response.status_code != 200:
+        return jsonify({'code': commits_response.status_code, 'message': 'Failed to get latest commit', 'details': commits_response.json()}), commits_response.status_code
+
+    latest_commit_sha = commits_response.json().get('sha')
+    if not latest_commit_sha:
+        return jsonify({'code': 404, 'message': 'Latest commit SHA not found'}), 404
+
+    # 获取目录树
+    trees_url = f"https://api.github.com/repos/{repo_full_name}/git/trees/{latest_commit_sha}?recursive=1"
+    trees_response = requests.get(trees_url)
+
+    if trees_response.status_code != 200:
+        return jsonify({'code': trees_response.status_code, 'message': 'Failed to get repository tree', 'details': trees_response.json()}), trees_response.status_code
+
+    tree = trees_response.json().get('tree', [])
+    repo_structure = {'directories': [], 'files': []}
+
+    for item in tree:
+        if item['type'] == 'tree':
+            repo_structure['directories'].append(item['path'])
+        elif item['type'] == 'blob':
+            repo_structure['files'].append(item['path'])
+
+    return jsonify(repo_structure)
+
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5050)
