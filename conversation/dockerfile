@@ -15,5 +15,4 @@ EXPOSE 5000
 
 # Start the application
 CMD ["python", "conversation.py"]
-#CMD ["gunicorn", "-c", "gunicorn_config.py", "conversation:app"]
-
+#CMD ["gunicorn", "-c", "gunicorn_config.py", "--logger-class","custom_logger.CustomLogger","conversation:app"]
