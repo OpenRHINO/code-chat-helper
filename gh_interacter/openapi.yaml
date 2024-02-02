@@ -215,3 +215,47 @@ components:
           format: int32
         message:
           type: string
+          
+  /repo_structure:
+    get:
+      summary: Retrieve the project's directory structure
+      operationId: getRepoStructure
+      tags:
+        - Project Structure
+      parameters:
+        - name: repo_full_name
+          in: query
+          required: true
+          description: The full name of the GitHub repository in the format 'owner/repo'
+          schema:
+            type: string
+        - name: branch_name
+          in: query
+          required: false
+          description: The name of the branch to retrieve the directory structure from, defaults to 'main'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved the project's directory structure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  directories:
+                    type: array
+                    items:
+                      type: string
+                    description: A list of paths for all directories in the project
+                  files:
+                    type: array
+                    items:
+                      type: string
+                    description: A list of paths for all files in the project
+        '400':
+          description: Incomplete or incorrect request parameters
+        '404':
+          description: Specified branch or repository not found
+        '500':
+          description: Internal server error
