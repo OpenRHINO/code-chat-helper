@@ -15,4 +15,5 @@ EXPOSE 5000
 
 # Start the application
 CMD ["python", "conversation.py"]
+#CMD ["gunicorn", "-c", "gunicorn_config.py", "conversation:app"]
 
