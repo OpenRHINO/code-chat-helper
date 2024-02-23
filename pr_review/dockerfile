@@ -13,9 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY pr_review.py .
 COPY gunicorn_config.py .
+COPY custom_logger.py .
 
 # Expose the port that the app runs on
 EXPOSE 8080
 
 # Start the application
-CMD ["gunicorn", "-c", "gunicorn_config.py", "pr_review:app"]
+CMD ["gunicorn", "-c", "gunicorn_config.py", "--logger-class", "custom_logger.CustomLogger", "pr_review:app"]
