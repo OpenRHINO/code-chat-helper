@@ -13,15 +13,15 @@ jobs:
     steps:
     - name: Check repository
       run: |
-        if [[ "${{ github.repository }}" != "OpenRHINO/code-chat-reviewer" ]]; then
-          echo "The CD workflow runs only in the upstream OpenRHINO/code-chat-reviewer repository.\n"
+        if [[ "${{ github.repository }}" != "OpenRHINO/code-chat-helper" ]]; then
+          echo "The CD workflow runs only in the upstream OpenRHINO/code-chat-helper repository.\n"
           echo "If you need to run the CD workflow in a fork repo, you may customize this workflow."
           exit 0
         fi
 
   deploy:
     runs-on: ubuntu-latest
-    if: github.repository == 'OpenRHINO/code-chat-reviewer'
+    if: github.repository == 'OpenRHINO/code-chat-helper'
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
