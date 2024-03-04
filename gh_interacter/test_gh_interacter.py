@@ -2,6 +2,9 @@ import unittest
 from unittest.mock import patch
 from gh_interacter import app  
 import base64
+import os
+
+RHINO_API_KEY = os.getenv("RHINO_API_KEY")
 
 class MockResponse:
     def __init__(self, json_data, status_code, text_data=None):
@@ -29,7 +32,7 @@ class FlaskAppTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
 
         # 测试有效 API 密钥的情况
-        response = self.app.get('/pr_content', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertNotEqual(response.status_code, 401)  # 期望不是 401，因为我们提供了有效的 API 密钥
 
     @patch('requests.get')
@@ -48,7 +51,7 @@ class FlaskAppTestCase(unittest.TestCase):
 
         mock_get.side_effect = [pr_response, diff_response]
 
-        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=1', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=1', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json['title'], 'PR Title')
         self.assertIn('Diff content here.', response.json['code_changes'])
@@ -56,11 +59,11 @@ class FlaskAppTestCase(unittest.TestCase):
     @patch('requests.get')
     def test_pr_content_missing_params(self, mock_get):
         # 测试缺少 repo_full_name 参数的情况
-        response = self.app.get('/pr_content?pr_number=1', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content?pr_number=1', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
         # 测试缺少 pr_number 参数的情况
-        response = self.app.get('/pr_content?repo_full_name=user/repo', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content?repo_full_name=user/repo', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
     @patch('requests.get')
@@ -68,7 +71,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟 PR 未找到的情况
         mock_get.return_value = MockResponse(None, 404)
 
-        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=999', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=999', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 404)
 
     @patch('requests.get')
@@ -76,7 +79,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟 GitHub API 调用失败的情况
         mock_get.return_value = MockResponse(None, 500)
 
-        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=1', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/pr_content?repo_full_name=user/repo&pr_number=1', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 500)
 
     @patch('requests.get')
@@ -86,18 +89,18 @@ class FlaskAppTestCase(unittest.TestCase):
             'content': base64.b64encode(b'file content here').decode('utf-8')
         }, 200)
 
-        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 200)
         self.assertIn('file content here', response.json['content'])
 
     @patch('requests.get')
     def test_file_content_missing_params(self, mock_get):
         # 测试缺少 repo_full_name 参数的情况
-        response = self.app.get('/file_content?file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/file_content?file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
         # 测试缺少 file_path 参数的情况
-        response = self.app.get('/file_content?repo_full_name=user/repo&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/file_content?repo_full_name=user/repo&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
     @patch('requests.get')
@@ -105,7 +108,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟未找到 main 或 master 分支的情况
         mock_get.side_effect = [MockResponse(None, 404), MockResponse(None, 404)]  # 先 main 后 master
 
-        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 404)
 
     @patch('requests.get')
@@ -113,7 +116,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟 GitHub API 调用失败的情况
         mock_get.return_value = MockResponse(None, 500)
 
-        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/file_content?repo_full_name=user/repo&file_path=/path/to/file&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 500)
 
     @patch('requests.get')
@@ -123,23 +126,23 @@ class FlaskAppTestCase(unittest.TestCase):
             'body': 'Issue description here.'
         }, 200)
 
-        response = self.app.get('/issue_info?repo_full_name=user/repo&issue_number=1', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/issue_info?repo_full_name=user/repo&issue_number=1', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json['title'], 'Issue Title')
         self.assertEqual(response.json['description'], 'Issue description here.')
 
     @patch('requests.get')
     def test_get_issue_info_missing_params(self, mock_get):
-        response = self.app.get('/issue_info?repo_full_name=user/repo', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/issue_info?repo_full_name=user/repo', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
-        response = self.app.get('/issue_info?issue_number=1', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/issue_info?issue_number=1', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
     @patch('requests.get')
     def test_get_issue_info_api_failure(self, mock_get):
         mock_get.return_value = MockResponse(None, 404)
-        response = self.app.get('/issue_info?repo_full_name=user/repo&issue_number=999', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/issue_info?repo_full_name=user/repo&issue_number=999', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 404)
 
     @patch('requests.post')
@@ -149,7 +152,7 @@ class FlaskAppTestCase(unittest.TestCase):
             'repo_full_name': 'user/repo',
             'pr_number': '1',
             'comment_body': 'This is a test comment'
-        }, headers={'X-Api-Key': '1013'})
+        }, headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json['message'], 'Comment created successfully')
 
@@ -158,13 +161,13 @@ class FlaskAppTestCase(unittest.TestCase):
         response = self.app.post('/submit_pr_comment', json={
             'repo_full_name': 'user/repo',
             'pr_number': '1'
-        }, headers={'X-Api-Key': '1013'})
+        }, headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
         response = self.app.post('/submit_pr_comment', json={
             'pr_number': '1',
             'comment_body': 'This is a test comment'
-        }, headers={'X-Api-Key': '1013'})
+        }, headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
     @patch('requests.post')
@@ -174,7 +177,7 @@ class FlaskAppTestCase(unittest.TestCase):
             'repo_full_name': 'user/repo',
             'pr_number': '1',
             'comment_body': 'This is a test comment'
-        }, headers={'X-Api-Key': '1013'})
+        }, headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json['message'], 'Failed to create comment')
 
@@ -191,7 +194,7 @@ class FlaskAppTestCase(unittest.TestCase):
             }, 200)
         ]
 
-        response = self.app.get('/repo_structure?repo_full_name=user/repo&branch_name=main',headers={'X-Api-Key': '1013'})
+        response = self.app.get('/repo_structure?repo_full_name=user/repo&branch_name=main',headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 200)
         json_data = response.get_json()
         self.assertIn('dir1', json_data['directories'])
@@ -200,11 +203,11 @@ class FlaskAppTestCase(unittest.TestCase):
     @patch('requests.get')
     def test_repo_structure_missing_params(self, mock_get):
         # 测试缺少 repo_full_name 参数的情况
-        response = self.app.get('/repo_structure?branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/repo_structure?branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
         # 测试 repo_full_name 格式错误的情况
-        response = self.app.get('/repo_structure?repo_full_name=invalid&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/repo_structure?repo_full_name=invalid&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 400)
 
     @patch('requests.get')
@@ -212,7 +215,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟未找到 main 或 master 分支的情况
         mock_get.side_effect = [MockResponse(None, 404), MockResponse(None, 404)]  # 先 main 后 master
 
-        response = self.app.get('/repo_structure?repo_full_name=user/repo', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/repo_structure?repo_full_name=user/repo', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 404)
 
     @patch('requests.get')
@@ -220,7 +223,7 @@ class FlaskAppTestCase(unittest.TestCase):
         # 模拟 GitHub API 调用失败的情况
         mock_get.return_value = MockResponse(None, 500)
 
-        response = self.app.get('/repo_structure?repo_full_name=user/repo&branch_name=main', headers={'X-Api-Key': '1013'})
+        response = self.app.get('/repo_structure?repo_full_name=user/repo&branch_name=main', headers={'X-Api-Key': RHINO_API_KEY})
         self.assertEqual(response.status_code, 500)
 
 if __name__ == '__main__':
