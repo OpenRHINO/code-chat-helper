@@ -104,9 +104,17 @@ def review_pr(event_id):
 
     logger.info(f"Webhook event type: {event['action']}")
 
-    if event["action"] not in ["opened", "synchronize", "reopened"]:
-        return "Ignoring non-PR opening/synchronize/reopening events", 200
+   # 这里包含了 edited 事件
+    if event["action"] not in ["opened", "synchronize", "reopened", "edited"]:
+        return "Ignoring unrelated PR events", 200
 
+    # 对于 edited 事件，检查标题或描述是否被修改
+    if event["action"] == "edited":
+        changes = event.get("changes", {})
+        if "title" not in changes and "body" not in changes:
+            logger.info("PR title or description not modified. Skipping AI Review.")
+            return "PR title or description not modified. Skipping AI Review.", 200
+    
     pr = event["pull_request"]
     repo = event["repository"]
 
@@ -145,6 +153,8 @@ def review_pr(event_id):
     changes_str = "Title: " + gh_pr.title + "\n"
     if gh_pr.body is not None:
         changes_str += "Body: " + gh_pr.body + "\n"
+    else:
+        changes_str += "Body: No description provided.\n" 
     if issues_description != "":
         changes_str += "---------------Issues referenced---------------\n"
         changes_str += issues_description
